@@ -1,7 +1,8 @@
+name: Deploy through github actions
 on:
   push:
     branches:
-      - main
+      - master
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
