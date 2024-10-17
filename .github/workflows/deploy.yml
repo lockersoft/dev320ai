@@ -18,6 +18,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./build  # Replace with your build output directory
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
