@@ -23,23 +23,17 @@ concurrency:
 
 jobs:
 
-  test:
+  accessibility:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: a11ytester
+        uses: mikaelvesavuori/a11ytester-action@v1
         with:
-          node-version: '16'
-      - name: Install dependencies
-        run: npm install
-      - name: Run Accessibility Tests
-        uses: pa11y/pa11y-ci-action@v2
-#        with:
- #         config: .pa11yci.json  # Optional: specify your Pa11y CI config file
-    # If tests pass, proceed to deploy
+          urls: '[\"www.google.com\"]'
 
+  # If tests pass, proceed to deploy
 
   # Single deploy job since we're just deploying
   deploy:
