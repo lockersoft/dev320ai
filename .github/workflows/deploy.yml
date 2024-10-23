@@ -31,7 +31,7 @@ jobs:
       - name: a11ytester
         uses: mikaelvesavuori/a11ytester-action@v1
         with:
-          urls: '[\"${{ steps.deployment.outputs.page_url }}\"]'
+          urls: '[\"lockersoft.github.io/dev320ai/\"]'
 
   # If tests pass, proceed to deploy
 
