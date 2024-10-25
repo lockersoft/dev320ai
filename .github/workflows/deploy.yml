@@ -40,16 +40,15 @@ jobs:
       - name: Build the site
         run: npm run build
 
-      - name: Validate HTML
-        uses: cycjimmy/htmlhint-action@v1
-        with:
-          src_dir: './build/**/*.html'
-
       - name: Run Accessibility Tests
-        uses: DequeLabs/axe-core-action@v3
+        uses: andrewwebber/pa11y-ci-action@v2
         with:
-          directory: './build'
-          fail-build: true
+          config: .pa11yci.json
+
+      - name: Validate HTML
+        uses: ericcornelissen/html-validate-action@v2
+        with:
+          files: './build/**/*.html'
 
   # If tests pass, proceed to deploy
 
