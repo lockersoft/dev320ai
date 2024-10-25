@@ -29,24 +29,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build the site
-        run: npm run build
-
-      - name: Install Pa11y
-        run: npm install -g pa11y
-
-      - name: Run Accessibility Tests
-        run: pa11y ./build --reporter cli
-
-      - name: Lint Code Base
+      - name: Lint HTML files
         uses: github/super-linter@v5
         env:
           VALIDATE_ALL_CODEBASE: false
@@ -54,7 +37,13 @@ jobs:
           DEFAULT_BRANCH: master
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HTML_FILE_EXTENSION: "html"
-          HTML_FOLDER: "./build"
+          HTML_FOLDER: "."
+
+      - name: Check for broken links
+        uses: lycheeverse/lychee-action@v1.5.0
+        with:
+          args: --no-progress --verbose ./**/*.html
+
           
   # If tests pass, proceed to deploy
 
