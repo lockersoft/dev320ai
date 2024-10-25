@@ -23,15 +23,29 @@ concurrency:
 
 jobs:
 
-  accessibility:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: a11ytester
-        uses: mikaelvesavuori/a11ytester-action@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          urls: '[\"lockersoft.github.io/dev320ai/\"]'
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install
+      - name: Build the site
+        run: npm run build
+      - name: Run Accessibility Tests
+        uses: pa11y/pa11y-ci-action@v2
+        with:
+          config: .pa11yci.json
+      - name: Validate HTML
+        uses: tj-actions/w3c-validation@v2
+        with:
+          file_paths: "build/**/*.html"
+          check_external: false
+
 
   # If tests pass, proceed to deploy
 
