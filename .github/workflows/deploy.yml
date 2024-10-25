@@ -28,29 +28,34 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '16'
+
       - name: Install dependencies
         run: npm install
+
       - name: Build the site
         run: npm run build
-      - name: Run Accessibility Tests
-        uses: pa11y/pa11y-ci-action@v2
-        with:
-          config: .pa11yci.json
-      - name: Validate HTML
-        uses: tj-actions/w3c-validation@v2
-        with:
-          file_paths: "build/**/*.html"
-          check_external: false
 
+      - name: Validate HTML
+        uses: cycjimmy/htmlhint-action@v1
+        with:
+          src_dir: './build/**/*.html'
+
+      - name: Run Accessibility Tests
+        uses: DequeLabs/axe-core-action@v3
+        with:
+          directory: './build'
+          fail-build: true
 
   # If tests pass, proceed to deploy
 
   # Single deploy job since we're just deploying
   deploy:
+    needs: test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
