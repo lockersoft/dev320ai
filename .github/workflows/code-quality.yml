@@ -1,6 +1,6 @@
 name: Comprehensive Code Quality & Accessibility Check
 
-on:
+on: 
   push:
     branches: [main]
   pull_request:
