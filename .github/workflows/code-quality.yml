@@ -8,29 +8,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'npm'
-
     - name: Initialize package.json
       run: |
         if [ ! -f package.json ]; then
-          echo '{"name":"ci-project","version":"1.0.0"}' > package.json
+          echo '{"name":"ci-project","version":"1.0.0", "scripts": {}, "dependencies": {}}' > package.json
         fi
 
     - name: Generate Lockfile
       run: npm install --package-lock-only
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'package-lock.json'
+
     - name: Install Tools
       run: |
-        npm install -g eslint stylelint axe-core pa11y playwright
-        npm install @axe-core/playwright --no-save
+        npm install eslint stylelint axe-core pa11y playwright @axe-core/playwright --no-package-lock --no-save
 
-    # Rest of your existing steps...
-
-        
     - name: Run ESLint (JavaScript)
       run: |
         eslint '**/*.js' \
@@ -49,41 +46,40 @@ jobs:
           --formatter html \
           > html-validate-report.html || true
 
-    - name: Run Accessibility Tests (axe-core + Playwright)
+    - name: Run Accessibility Tests
       run: |
-        npx playwright test tests/accessibility.spec.js --reporter=line,json \
-          || true
+        npx playwright test accessibility.spec.js --reporter=line,json || true
       working-directory: ./tests
 
     - name: Generate Consolidated Report
       run: |
-        # Combine ESLint results
-        echo "# Code Quality & Accessibility Report" > full-report.md
+        echo "# Code Quality Report" > full-report.md
         echo "## JavaScript Issues" >> full-report.md
-        [ -s eslint-report.txt ] && cat eslint-report.txt >> full-report.md || echo "No JavaScript issues found" >> full-report.md
+        [ -s eslint-report.txt ] && cat eslint-report.txt >> full-report.md || echo "No issues" >> full-report.md
         
-        # Combine CSS results
         echo "\n## CSS Issues" >> full-report.md
-        [ -s stylelint-report.md ] && cat stylelint-report.md >> full-report.md || echo "No CSS issues found" >> full-report.md
+        [ -s stylelint-report.md ] && cat stylelint-report.md >> full-report.md || echo "No issues" >> full-report.md
         
-        # Combine Accessibility results
         echo "\n## Accessibility Issues" >> full-report.md
-        jq -r '.tests[0].results[] | "File: \(.title)\nLine: \(.line)\nError: \(.errorMessage)\n"' playwright-report.json >> full-report.md
+        [ -f tests/playwright-report.json ] && \
+          jq -r '.tests[0].results[] | "File: \(.title)\nLine: \(.lineNumber)\nError: \(.error.message)\n"' \
+          tests/playwright-report.json >> full-report.md || \
+          echo "No accessibility issues found" >> full-report.md
+
+        echo "\n# Recommendations" >> full-report.md
+        cat <<EOT >> full-report.md
+        ### JavaScript
+        - Use modern ES6 syntax
+        - Add error handling
         
-        # Add remediation guide
-        echo "\n# Fix Recommendations" >> full-report.md
-        echo "### JavaScript Errors" >> full-report.md
-        echo "- Use `const`/`let` instead of `var` for block scoping" >> full-report.md
-        echo "- Always handle promise rejections with catch()" >> full-report.md
+        ### CSS
+        - Use CSS variables
+        - Validate responsive layouts
         
-        echo "\n### CSS Issues" >> full-report.md
-        echo "- Use relative units (em/rem) instead of fixed pixels" >> full-report.md
-        echo "- Validate browser prefixes with Autoprefixer" >> full-report.md
-        
-        echo "\n### Accessibility Fixes" >> full-report.md
-        echo "- Add ARIA labels to interactive elements" >> full-report.md
-        echo "- Ensure color contrast ratio meets AA standard (4.5:1)" >> full-report.md
-        echo "- Provide text alternatives for non-text content" >> full-report.md
+        ### Accessibility
+        - Semantic HTML elements
+        - ARIA landmarks
+        EOT
 
     - name: Upload Report
       uses: actions/upload-artifact@v4
