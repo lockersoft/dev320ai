@@ -1,35 +1,35 @@
-name: Comprehensive Code Quality & Accessibility Check
+name: Code Quality & Accessibility
 
-on: 
-  push:
-    branches: [main, master]
+on: [push, workflow_dispatch]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-  
 jobs:
   code-quality:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Generate temporary lock file
-      run: npm install --package-lock-only
-  
-    - name: Set up Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
-        cache: ''
+        node-version: 20
+        cache: 'npm'
 
-    - name: Generate package-lock.json (Temporary)
-      run: npm install --package-lock-only  # Creates lock file only for CI
-
-    - name: Install dependencies
+    - name: Initialize package.json
       run: |
-        npm install -g eslint stylelint axe-core pa11y playwright --no-package-lock
-        npm install @axe-core/playwright
+        if [ ! -f package.json ]; then
+          echo '{"name":"ci-project","version":"1.0.0"}' > package.json
+        fi
+
+    - name: Generate Lockfile
+      run: npm install --package-lock-only
+
+    - name: Install Tools
+      run: |
+        npm install -g eslint stylelint axe-core pa11y playwright
+        npm install @axe-core/playwright --no-save
+
+    # Rest of your existing steps...
+
         
     - name: Run ESLint (JavaScript)
       run: |
