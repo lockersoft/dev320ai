@@ -18,12 +18,16 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
-
+        cache: false
+        
     - name: Install dependencies
       run: |
+        npm install --no-package-lock  # Skip lock file generation
         npm install -g eslint stylelint axe-core pa11y playwright
         npm install @axe-core/playwright
+        
+    - name: Generate package-lock.json (Temporary)
+      run: npm install --package-lock-only  # Creates lock file only for CI
 
     - name: Run ESLint (JavaScript)
       run: |
