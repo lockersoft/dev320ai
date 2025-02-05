@@ -1,0 +1,87 @@
+name: Comprehensive Code Quality & Accessibility Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm install -g eslint stylelint axe-core pa11y playwright
+        npm install @axe-core/playwright
+
+    - name: Run ESLint (JavaScript)
+      run: |
+        eslint '**/*.js' \
+          --format '{{file}}:{{line}}:{{column}} - {{message}} [{{ruleId}}]' \
+          > eslint-report.txt || true
+
+    - name: Run Stylelint (CSS)
+      run: |
+        stylelint '**/*.css' \
+          --custom-formatter ./node_modules/stylelint-formatter-markdown \
+          > stylelint-report.md || true
+
+    - name: Run HTML Validator
+      run: |
+        find . -name '*.html' -exec html-validate {} \; \
+          --formatter html \
+          > html-validate-report.html || true
+
+    - name: Run Accessibility Tests (axe-core + Playwright)
+      run: |
+        npx playwright test tests/accessibility.spec.js --reporter=line,json \
+          || true
+      working-directory: ./tests
+
+    - name: Generate Consolidated Report
+      run: |
+        # Combine ESLint results
+        echo "# Code Quality & Accessibility Report" > full-report.md
+        echo "## JavaScript Issues" >> full-report.md
+        [ -s eslint-report.txt ] && cat eslint-report.txt >> full-report.md || echo "No JavaScript issues found" >> full-report.md
+        
+        # Combine CSS results
+        echo "\n## CSS Issues" >> full-report.md
+        [ -s stylelint-report.md ] && cat stylelint-report.md >> full-report.md || echo "No CSS issues found" >> full-report.md
+        
+        # Combine Accessibility results
+        echo "\n## Accessibility Issues" >> full-report.md
+        jq -r '.tests[0].results[] | "File: \(.title)\nLine: \(.line)\nError: \(.errorMessage)\n"' playwright-report.json >> full-report.md
+        
+        # Add remediation guide
+        echo "\n# Fix Recommendations" >> full-report.md
+        echo "### JavaScript Errors" >> full-report.md
+        echo "- Use `const`/`let` instead of `var` for block scoping" >> full-report.md
+        echo "- Always handle promise rejections with catch()" >> full-report.md
+        
+        echo "\n### CSS Issues" >> full-report.md
+        echo "- Use relative units (em/rem) instead of fixed pixels" >> full-report.md
+        echo "- Validate browser prefixes with Autoprefixer" >> full-report.md
+        
+        echo "\n### Accessibility Fixes" >> full-report.md
+        echo "- Add ARIA labels to interactive elements" >> full-report.md
+        echo "- Ensure color contrast ratio meets AA standard (4.5:1)" >> full-report.md
+        echo "- Provide text alternatives for non-text content" >> full-report.md
+
+    - name: Upload Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-quality-report
+        path: |
+          full-report.md
+          html-validate-report.html
